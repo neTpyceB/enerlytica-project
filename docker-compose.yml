@@ -1,0 +1,54 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: enerlytica-nginx
+    depends_on:
+      - php
+      - python-api
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    networks:
+      - enerlytica-net
+
+  php:
+    image: php:8.4-fpm-alpine
+    container_name: enerlytica-php
+    depends_on:
+      - python-api
+    networks:
+      - enerlytica-net
+
+  python-api:
+    image: python:3.12-slim
+    container_name: enerlytica-python-api
+    working_dir: /app
+    command: ["python", "-m", "http.server", "8000"]
+    expose:
+      - "8000"
+    volumes:
+      - ./python-service:/app
+    depends_on:
+      - postgres
+    networks:
+      - enerlytica-net
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: enerlytica-postgres
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-enerlytica}"
+      POSTGRES_USER: "${POSTGRES_USER:-enerlytica}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-enerlytica}"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - enerlytica-net
+
+networks:
+  enerlytica-net:
+    name: enerlytica-net
+
+volumes:
+  postgres-data:
