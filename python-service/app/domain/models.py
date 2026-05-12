@@ -36,7 +36,14 @@ class RawReading(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     kwh: Mapped[float] = mapped_column(Float, nullable=False)
     source: Mapped[str] = mapped_column(String(64), nullable=False)
-    quality: Mapped[ReadingQuality] = mapped_column(SQLEnum(ReadingQuality, name="reading_quality"), nullable=False)
+    quality: Mapped[ReadingQuality] = mapped_column(
+        SQLEnum(
+            ReadingQuality,
+            name="reading_quality",
+            values_callable=lambda enum_class: [member.value for member in enum_class],
+        ),
+        nullable=False,
+    )
     external_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

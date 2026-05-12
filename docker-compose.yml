@@ -24,6 +24,7 @@ services:
       - python-api
     volumes:
       - ./legacy-php/public:/var/www/legacy/public:ro
+      - ./legacy-php/src:/var/www/legacy/src:ro
     networks:
       - enerlytica-net
 
