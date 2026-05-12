@@ -9,5 +9,7 @@ description = "Modern Python backend for the Enerlytica modernization demo."
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi",
+  "psycopg[binary]",
+  "sqlalchemy",
   "uvicorn[standard]",
 ]
