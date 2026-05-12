@@ -16,3 +16,9 @@ class ReadingCreate(BaseModel):
 class ReadingIngestResult(BaseModel):
     status: str
     reading_id: int
+
+
+class AggregateDailyJobResult(BaseModel):
+    status: str
+    readings_processed: int
+    days_aggregated: int
