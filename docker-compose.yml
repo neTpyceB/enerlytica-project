@@ -14,7 +14,9 @@ services:
       - enerlytica-net
 
   php:
-    image: php:8.4-fpm-alpine
+    build:
+      context: ./legacy-php
+      dockerfile: Dockerfile
     container_name: enerlytica-php
     expose:
       - "9000"
@@ -26,12 +28,13 @@ services:
       - enerlytica-net
 
   python-api:
-    image: python:3.12-slim
+    build:
+      context: ./python-service
+      dockerfile: Dockerfile
     container_name: enerlytica-python-api
-    working_dir: /app
-    command: ["python", "-m", "http.server", "8000"]
     expose:
       - "8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     volumes:
       - ./python-service:/app
     depends_on:

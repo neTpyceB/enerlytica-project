@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=80.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enerlytica-python-service"
+version = "0.1.0"
+description = "Modern Python backend for the Enerlytica modernization demo."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+]
