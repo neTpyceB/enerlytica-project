@@ -42,7 +42,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-v18-data:/var/lib/postgresql
     networks:
       - enerlytica-net
 
@@ -51,4 +51,4 @@ networks:
     name: enerlytica-net
 
 volumes:
-  postgres-data:
+  postgres-v18-data:
