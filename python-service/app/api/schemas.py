@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from pydantic import AwareDatetime, BaseModel, Field
 
 from app.domain.models import ReadingQuality
@@ -22,3 +24,12 @@ class AggregateDailyJobResult(BaseModel):
     status: str
     readings_processed: int
     days_aggregated: int
+
+
+class DailyConsumptionRow(BaseModel):
+    meter_id: str
+    customer_id: str
+    day: date
+    total_kwh: float
+    reading_count: int
+    calculated_at: datetime
