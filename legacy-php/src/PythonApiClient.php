@@ -16,6 +16,11 @@ final class PythonApiClient
         return $this->postJson('/readings', $payload);
     }
 
+    public function getCustomerDailyConsumption(string $customerId): array
+    {
+        return $this->getJson('/customers/' . rawurlencode($customerId) . '/daily-consumption');
+    }
+
     private function postJson(string $path, array $payload): array
     {
         $content = json_encode($payload, JSON_UNESCAPED_SLASHES);
@@ -40,6 +45,27 @@ final class PythonApiClient
             ],
         ]);
 
+        return $this->request($path, $context);
+    }
+
+    private function getJson(string $path): array
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => implode("\r\n", [
+                    'Accept: application/json',
+                ]) . "\r\n",
+                'timeout' => 10,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        return $this->request($path, $context);
+    }
+
+    private function request(string $path, mixed $context): array
+    {
         $body = @file_get_contents($this->baseUrl . $path, false, $context);
         $responseHeaders = $http_response_header ?? [];
         $statusCode = $this->extractStatusCode($responseHeaders);
