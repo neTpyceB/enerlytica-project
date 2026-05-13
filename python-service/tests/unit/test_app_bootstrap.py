@@ -29,3 +29,11 @@ def test_raw_reading_indexes_declared_for_partial_idempotency() -> None:
 
     assert "uq_raw_readings_external_id_not_null" in index_names
     assert "uq_raw_readings_meter_timestamp_when_external_id_null" in index_names
+
+
+def test_request_id_pattern_accepts_expected_values() -> None:
+    from app.main import REQUEST_ID_PATTERN
+
+    assert REQUEST_ID_PATTERN.fullmatch("trace-1_abc:123") is not None
+    assert REQUEST_ID_PATTERN.fullmatch(" ") is None
+    assert REQUEST_ID_PATTERN.fullmatch("x" * 65) is None

@@ -1,18 +1,20 @@
 from datetime import date, datetime
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from app.domain.models import ReadingQuality
 
 
 class ReadingCreate(BaseModel):
-    meter_id: str
-    customer_id: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    meter_id: str = Field(min_length=1, max_length=128)
+    customer_id: str = Field(min_length=1, max_length=128)
     timestamp: AwareDatetime
-    kwh: float = Field(ge=0)
-    source: str
+    kwh: float = Field(ge=0, allow_inf_nan=False)
+    source: str = Field(min_length=1, max_length=64)
     quality: ReadingQuality
-    external_id: str | None = None
+    external_id: str | None = Field(default=None, max_length=128)
 
 
 class ReadingIngestResult(BaseModel):

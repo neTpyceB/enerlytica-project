@@ -30,19 +30,48 @@ def test_schema_rejects_negative_kwh() -> None:
         )
 
 
-def test_domain_validation_rejects_blank_meter_id() -> None:
-    payload = ReadingCreate(
-        meter_id="   ",
-        customer_id="CUSTOMER-001",
-        timestamp="2026-05-01T10:00:00+00:00",
-        kwh=1.25,
-        source="legacy_php",
-        quality="measured",
-    )
+def test_schema_rejects_infinite_kwh() -> None:
+    with pytest.raises(ValidationError):
+        ReadingCreate(
+            meter_id="METER-001",
+            customer_id="CUSTOMER-001",
+            timestamp="2026-05-01T10:00:00+00:00",
+            kwh=float("inf"),
+            source="legacy_php",
+            quality="measured",
+        )
 
+
+def test_schema_rejects_overlong_external_id() -> None:
+    with pytest.raises(ValidationError):
+        ReadingCreate(
+            meter_id="METER-001",
+            customer_id="CUSTOMER-001",
+            timestamp="2026-05-01T10:00:00+00:00",
+            kwh=1.25,
+            source="legacy_php",
+            quality="measured",
+            external_id="x" * 129,
+        )
+
+
+def test_schema_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        ReadingCreate(
+            meter_id="METER-001",
+            customer_id="CUSTOMER-001",
+            timestamp="2026-05-01T10:00:00+00:00",
+            kwh=1.25,
+            source="legacy_php",
+            quality="measured",
+            unexpected="value",
+        )
+
+
+def test_domain_validation_rejects_blank_meter_id() -> None:
     with pytest.raises(DomainValidationError):
         validate_reading_payload(
-            meter_id=payload.meter_id,
-            customer_id=payload.customer_id,
-            source=payload.source,
+            meter_id="   ",
+            customer_id="CUSTOMER-001",
+            source="legacy_php",
         )

@@ -1,4 +1,5 @@
 import uuid
+import re
 
 from fastapi import FastAPI, Request
 
@@ -12,11 +13,13 @@ from app.infrastructure.logging import bind_request_id, configure_logging, reset
 
 configure_logging()
 app = FastAPI(title="Enerlytica Modernization Demo API")
+REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
 
 
 @app.middleware("http")
 async def correlation_id_middleware(request: Request, call_next):
-    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    request_id_header = (request.headers.get("x-request-id") or "").strip()
+    request_id = request_id_header if REQUEST_ID_PATTERN.fullmatch(request_id_header) else str(uuid.uuid4())
     token = bind_request_id(request_id)
     try:
         response = await call_next(request)

@@ -52,7 +52,7 @@ services:
       POSTGRES_USER: "${POSTGRES_USER:-enerlytica}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-enerlytica}"
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-v18-data:/var/lib/postgresql
     networks:

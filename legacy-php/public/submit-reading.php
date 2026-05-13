@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../src/PythonApiClient.php';
+session_start();
 
 $response = null;
 $formData = [
@@ -14,30 +15,44 @@ $formData = [
     'external_id' => '',
 ];
 
+if (!isset($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formData['meter_id'] = trim((string) ($_POST['meter_id'] ?? ''));
-    $formData['customer_id'] = trim((string) ($_POST['customer_id'] ?? ''));
-    $formData['timestamp'] = trim((string) ($_POST['timestamp'] ?? ''));
-    $formData['kwh'] = trim((string) ($_POST['kwh'] ?? ''));
-    $formData['quality'] = trim((string) ($_POST['quality'] ?? 'measured'));
-    $formData['external_id'] = trim((string) ($_POST['external_id'] ?? ''));
+    $postedCsrfToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals($csrfToken, $postedCsrfToken)) {
+        $response = [
+            'status_code' => 403,
+            'data' => null,
+            'error' => 'Invalid CSRF token',
+        ];
+    } else {
+        $formData['meter_id'] = trim((string) ($_POST['meter_id'] ?? ''));
+        $formData['customer_id'] = trim((string) ($_POST['customer_id'] ?? ''));
+        $formData['timestamp'] = trim((string) ($_POST['timestamp'] ?? ''));
+        $formData['kwh'] = trim((string) ($_POST['kwh'] ?? ''));
+        $formData['quality'] = trim((string) ($_POST['quality'] ?? 'measured'));
+        $formData['external_id'] = trim((string) ($_POST['external_id'] ?? ''));
 
-    // Legacy PHP form delegates smart-meter processing to extracted Python service.
-    $payload = [
-        'meter_id' => $formData['meter_id'],
-        'customer_id' => $formData['customer_id'],
-        'timestamp' => $formData['timestamp'],
-        'kwh' => (float) $formData['kwh'],
-        'source' => 'legacy_php',
-        'quality' => $formData['quality'],
-    ];
+        // Legacy PHP form delegates smart-meter processing to extracted Python service.
+        $payload = [
+            'meter_id' => $formData['meter_id'],
+            'customer_id' => $formData['customer_id'],
+            'timestamp' => $formData['timestamp'],
+            'kwh' => (float) $formData['kwh'],
+            'source' => 'legacy_php',
+            'quality' => $formData['quality'],
+        ];
 
-    if ($formData['external_id'] !== '') {
-        $payload['external_id'] = $formData['external_id'];
+        if ($formData['external_id'] !== '') {
+            $payload['external_id'] = $formData['external_id'];
+        }
+
+        $client = new PythonApiClient();
+        $response = $client->submitReading($payload);
     }
-
-    $client = new PythonApiClient();
-    $response = $client->submitReading($payload);
 }
 ?>
 <!doctype html>
@@ -52,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p><a href="/legacy/">Back to portal</a></p>
 
     <form method="post" action="/legacy/submit-reading.php">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
         <p>
             <label for="meter_id">Meter ID</label><br>
             <input id="meter_id" name="meter_id" required value="<?= htmlspecialchars($formData['meter_id'], ENT_QUOTES, 'UTF-8') ?>">

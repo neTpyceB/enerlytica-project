@@ -90,14 +90,14 @@ class JobService:
                 job_run.finished_at.timestamp(),
             )
             logger.info("aggregation_job_completed")
-        except Exception as exc:
+        except Exception:
             METRICS.inc_counter("enerlytica_aggregation_failures_total")
             db.rollback()
             job_run.finished_at = datetime.now(timezone.utc)
             job_run.status = "failed"
             job_run.records_processed = 0
             job_run.records_failed = 1
-            job_run.message = f"Aggregation failed: {exc}"
+            job_run.message = "Aggregation failed"
             db.add(job_run)
             db.commit()
             logger.exception("aggregation_job_failed")
