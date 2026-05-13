@@ -48,7 +48,7 @@ def get_metrics(db: Session = Depends(get_db)) -> PlainTextResponse:
         freshness_seconds = (
             datetime.now(timezone.utc) - latest_reading_timestamp.astimezone(timezone.utc)
         ).total_seconds()
-        gauges["enerlytica_data_freshness_seconds"] = freshness_seconds
+        gauges["enerlytica_data_freshness_seconds"] = max(0.0, freshness_seconds)
 
     body = render_prometheus_text(counters=counters, gauges=gauges)
     return PlainTextResponse(body, media_type="text/plain; version=0.0.4; charset=utf-8")

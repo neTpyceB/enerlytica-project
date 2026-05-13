@@ -21,7 +21,13 @@ class RawReading(Base):
     __tablename__ = "raw_readings"
     __table_args__ = (
         CheckConstraint("kwh >= 0", name="ck_raw_readings_kwh_non_negative"),
-        UniqueConstraint("meter_id", "timestamp", name="uq_raw_readings_meter_timestamp"),
+        Index(
+            "uq_raw_readings_meter_timestamp_when_external_id_null",
+            "meter_id",
+            "timestamp",
+            unique=True,
+            postgresql_where=text("external_id IS NULL"),
+        ),
         Index(
             "uq_raw_readings_external_id_not_null",
             "external_id",

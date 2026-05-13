@@ -22,3 +22,10 @@ def test_core_tables_declared() -> None:
     assert DailyConsumption.__tablename__ == "daily_consumption"
     assert DataQualityIssue.__tablename__ == "data_quality_issues"
     assert JobRun.__tablename__ == "job_runs"
+
+
+def test_raw_reading_indexes_declared_for_partial_idempotency() -> None:
+    index_names = {index.name for index in RawReading.__table__.indexes}
+
+    assert "uq_raw_readings_external_id_not_null" in index_names
+    assert "uq_raw_readings_meter_timestamp_when_external_id_null" in index_names

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.infrastructure.database import SessionLocal
 
@@ -15,6 +16,8 @@ def get_health() -> dict[str, str]:
     try:
         session.execute(text("SELECT 1"))
         database_status = "up"
+    except SQLAlchemyError:
+        database_status = "down"
     finally:
         session.close()
 
