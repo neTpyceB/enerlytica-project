@@ -33,3 +33,23 @@ class DailyConsumptionRow(BaseModel):
     total_kwh: float
     reading_count: int
     calculated_at: datetime
+
+
+class JobRunRow(BaseModel):
+    id: int
+    job_name: str
+    started_at: datetime
+    finished_at: datetime | None
+    status: str
+    records_processed: int
+    records_failed: int
+    message: str | None
+
+
+class DataQualityIssueRow(BaseModel):
+    id: int
+    meter_id: str
+    issue_type: str
+    description: str
+    severity: str
+    detected_at: datetime
