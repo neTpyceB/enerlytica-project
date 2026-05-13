@@ -1,18 +1,26 @@
 from datetime import datetime, timezone
+from dataclasses import dataclass
 import logging
 
-from sqlalchemy import delete, select
+from sqlalchemy import Date, cast, delete, func, literal, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.api.schemas import AggregateDailyJobResult
-from app.domain.aggregation import aggregate_daily_consumption
 from app.domain.data_quality import detect_data_quality_issues
 from app.domain.models import DataQualityIssue, DailyConsumption, JobRun, RawReading
 from app.infrastructure.metrics import METRICS
 
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class _DataQualityReading:
+    meter_id: str
+    timestamp: datetime
+    kwh: float
+    external_id: str | None
 
 
 class JobService:
@@ -31,23 +39,41 @@ class JobService:
         db.refresh(job_run)
 
         try:
-            readings = db.scalars(select(RawReading)).all()
-            daily_rows = aggregate_daily_consumption(readings)
-            if daily_rows:
-                calculated_at = datetime.now(timezone.utc)
-                rows = [
-                    {
-                        "meter_id": item.meter_id,
-                        "customer_id": item.customer_id,
-                        "day": item.day,
-                        "total_kwh": item.total_kwh,
-                        "reading_count": item.reading_count,
-                        "calculated_at": calculated_at,
-                    }
-                    for item in daily_rows
-                ]
+            readings_processed = int(db.scalar(select(func.count()).select_from(RawReading)) or 0)
+            day_expr = cast(func.timezone("UTC", RawReading.timestamp), Date)
+            aggregated_readings = (
+                select(
+                    RawReading.meter_id.label("meter_id"),
+                    func.min(RawReading.customer_id).label("customer_id"),
+                    day_expr.label("day"),
+                    func.sum(RawReading.kwh).label("total_kwh"),
+                    func.count(RawReading.id).label("reading_count"),
+                )
+                .group_by(RawReading.meter_id, day_expr)
+                .subquery()
+            )
+            days_aggregated = int(db.scalar(select(func.count()).select_from(aggregated_readings)) or 0)
 
-                statement = pg_insert(DailyConsumption).values(rows)
+            if days_aggregated > 0:
+                calculated_at = datetime.now(timezone.utc)
+                statement = pg_insert(DailyConsumption).from_select(
+                    [
+                        "meter_id",
+                        "customer_id",
+                        "day",
+                        "total_kwh",
+                        "reading_count",
+                        "calculated_at",
+                    ],
+                    select(
+                        aggregated_readings.c.meter_id,
+                        aggregated_readings.c.customer_id,
+                        aggregated_readings.c.day,
+                        aggregated_readings.c.total_kwh,
+                        aggregated_readings.c.reading_count,
+                        literal(calculated_at),
+                    ),
+                )
                 upsert = statement.on_conflict_do_update(
                     index_elements=[DailyConsumption.meter_id, DailyConsumption.day],
                     set_={
@@ -59,7 +85,29 @@ class JobService:
                 )
                 db.execute(upsert)
 
-            findings = detect_data_quality_issues(readings, now=started_at)
+            quality_rows = db.execute(
+                select(
+                    RawReading.meter_id,
+                    RawReading.timestamp,
+                    RawReading.kwh,
+                    RawReading.external_id,
+                )
+                .order_by(RawReading.meter_id.asc(), RawReading.timestamp.asc(), RawReading.id.asc())
+                .execution_options(yield_per=1_000)
+            )
+            findings = detect_data_quality_issues(
+                (
+                    _DataQualityReading(
+                        meter_id=row.meter_id,
+                        timestamp=row.timestamp,
+                        kwh=row.kwh,
+                        external_id=row.external_id,
+                    )
+                    for row in quality_rows
+                ),
+                now=started_at,
+                presorted_by_meter_timestamp=True,
+            )
             db.execute(delete(DataQualityIssue))
             if findings:
                 db.add_all(
@@ -76,10 +124,10 @@ class JobService:
 
             job_run.finished_at = datetime.now(timezone.utc)
             job_run.status = "completed"
-            job_run.records_processed = len(readings)
+            job_run.records_processed = readings_processed
             job_run.records_failed = 0
             job_run.message = (
-                f"Aggregated {len(daily_rows)} daily rows; detected {len(findings)} data quality issues."
+                f"Aggregated {days_aggregated} daily rows; detected {len(findings)} data quality issues."
             )
             db.commit()
 
@@ -105,8 +153,8 @@ class JobService:
 
         return AggregateDailyJobResult(
             status="completed",
-            readings_processed=len(readings),
-            days_aggregated=len(daily_rows),
+            readings_processed=readings_processed,
+            days_aggregated=days_aggregated,
         )
 
     def list_job_runs(self, db: Session, limit: int = 50) -> list[JobRun]:
