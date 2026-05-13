@@ -1,0 +1,23 @@
+[
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "day": "2026-05-01",
+    "total_kwh": 1.0,
+    "reading_count": 1
+  },
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "day": "2026-05-02",
+    "total_kwh": 2.0,
+    "reading_count": 1
+  },
+  {
+    "meter_id": "METER-002",
+    "customer_id": "CUSTOMER-002",
+    "day": "2026-05-01",
+    "total_kwh": 4.0,
+    "reading_count": 2
+  }
+]

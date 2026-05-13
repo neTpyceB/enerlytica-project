@@ -1,0 +1,38 @@
+[
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "timestamp": "2026-05-01T10:00:00+00:00",
+    "kwh": 1.2,
+    "source": "seed_script",
+    "quality": "measured",
+    "external_id": "seed-001"
+  },
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "timestamp": "2026-05-01T11:00:00+00:00",
+    "kwh": 1.0,
+    "source": "seed_script",
+    "quality": "measured",
+    "external_id": "seed-002"
+  },
+  {
+    "meter_id": "METER-002",
+    "customer_id": "CUSTOMER-002",
+    "timestamp": "2026-05-01T23:30:00+00:00",
+    "kwh": 0.8,
+    "source": "seed_script",
+    "quality": "estimated",
+    "external_id": "seed-003"
+  },
+  {
+    "meter_id": "METER-002",
+    "customer_id": "CUSTOMER-002",
+    "timestamp": "2026-05-02T02:00:00+02:00",
+    "kwh": 0.7,
+    "source": "seed_script",
+    "quality": "corrected",
+    "external_id": "seed-004"
+  }
+]

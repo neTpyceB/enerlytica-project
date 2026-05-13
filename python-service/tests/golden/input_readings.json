@@ -1,0 +1,34 @@
+[
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "timestamp": "2026-05-01T23:30:00+00:00",
+    "kwh": 1.0,
+    "source": "golden",
+    "quality": "measured"
+  },
+  {
+    "meter_id": "METER-001",
+    "customer_id": "CUSTOMER-001",
+    "timestamp": "2026-05-02T00:15:00+00:00",
+    "kwh": 2.0,
+    "source": "golden",
+    "quality": "measured"
+  },
+  {
+    "meter_id": "METER-002",
+    "customer_id": "CUSTOMER-002",
+    "timestamp": "2026-05-01T23:00:00+00:00",
+    "kwh": 1.5,
+    "source": "golden",
+    "quality": "estimated"
+  },
+  {
+    "meter_id": "METER-002",
+    "customer_id": "CUSTOMER-002",
+    "timestamp": "2026-05-02T01:00:00+02:00",
+    "kwh": 2.5,
+    "source": "golden",
+    "quality": "corrected"
+  }
+]

@@ -13,10 +13,10 @@ logs:
 	$(COMPOSE) logs -f --tail=200
 
 test:
-	$(COMPOSE) run --rm $(PYTHON_SERVICE) pytest
+	$(COMPOSE) run --rm $(PYTHON_SERVICE) sh -lc "pip install --quiet pytest httpx && PYTHONPATH=/app pytest -q tests"
 
 lint:
-	$(COMPOSE) run --rm $(PYTHON_SERVICE) ruff check .
+	$(COMPOSE) run --rm $(PYTHON_SERVICE) sh -lc "pip install --quiet ruff && ruff check app tests"
 
 migrate:
 	$(COMPOSE) run --rm $(PYTHON_SERVICE) alembic upgrade head
