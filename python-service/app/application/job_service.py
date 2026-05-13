@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -8,11 +9,16 @@ from app.api.schemas import AggregateDailyJobResult
 from app.domain.aggregation import aggregate_daily_consumption
 from app.domain.data_quality import detect_data_quality_issues
 from app.domain.models import DataQualityIssue, DailyConsumption, JobRun, RawReading
+from app.infrastructure.metrics import METRICS
+
+
+logger = logging.getLogger(__name__)
 
 
 class JobService:
     def aggregate_daily_consumption(self, db: Session) -> AggregateDailyJobResult:
         started_at = datetime.now(timezone.utc)
+        METRICS.inc_counter("enerlytica_aggregation_runs_total")
         job_run = JobRun(
             job_name="aggregate_daily_consumption",
             started_at=started_at,
@@ -76,7 +82,16 @@ class JobService:
                 f"Aggregated {len(daily_rows)} daily rows; detected {len(findings)} data quality issues."
             )
             db.commit()
+
+            duration_seconds = (job_run.finished_at - started_at).total_seconds()
+            METRICS.set_gauge("enerlytica_aggregation_duration_seconds", duration_seconds)
+            METRICS.set_gauge(
+                "enerlytica_last_successful_aggregation_timestamp_seconds",
+                job_run.finished_at.timestamp(),
+            )
+            logger.info("aggregation_job_completed")
         except Exception as exc:
+            METRICS.inc_counter("enerlytica_aggregation_failures_total")
             db.rollback()
             job_run.finished_at = datetime.now(timezone.utc)
             job_run.status = "failed"
@@ -85,6 +100,7 @@ class JobService:
             job_run.message = f"Aggregation failed: {exc}"
             db.add(job_run)
             db.commit()
+            logger.exception("aggregation_job_failed")
             raise
 
         return AggregateDailyJobResult(
